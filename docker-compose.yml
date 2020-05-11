@@ -1,0 +1,64 @@
+version: '3'
+services:
+  redis1:
+    image: redislabs/redisearch:latest
+    ports:
+      - "7000:7000"
+    volumes:
+      - ./docker-data/redis-cluster1.tmpl:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf --loadmodule /usr/lib/redis/modules/redisearch.so
+    networks:
+      app_net:
+        ipv4_address: 173.17.0.2
+  redis2:
+    image: redislabs/redisearch:latest
+    ports:
+      - "7001:7000"
+    volumes:
+      - ./docker-data/redis-cluster2.tmpl:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf --loadmodule /usr/lib/redis/modules/redisearch.so
+    networks:
+      app_net:
+        ipv4_address: 173.17.0.3
+  redis3:
+    image: redislabs/redisearch:latest
+    ports:
+      - "7002:7000"
+    volumes:
+      - ./docker-data/redis-cluster3.tmpl:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf --loadmodule /usr/lib/redis/modules/redisearch.so
+    networks:
+      app_net:
+        ipv4_address: 173.17.0.4
+  redis-cluster:
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        redis_version: '3.2.9'
+    hostname: server
+    depends_on:
+      - redis1
+      - redis2
+      - redis3
+    networks:
+      app_net:
+        ipv4_address: 173.17.0.5
+  dump:
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile2
+    depends_on:
+      - redis-cluster
+    networks:
+      app_net:
+        ipv4_address: 173.17.0.99
+networks:
+  app_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 173.17.0.0/16
